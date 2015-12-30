@@ -1,0 +1,171 @@
+package classification;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class Classifier {
+
+		public static void main (String []args) throws NumberFormatException, IOException{
+			
+	 // Declaring arraylists for benign and malignant cancer		
+			
+			ArrayList<ArrayList<Integer>> benignCancer=new ArrayList<ArrayList<Integer>>();
+			ArrayList<ArrayList<Integer>> malignantCancer=new ArrayList<ArrayList<Integer>>();
+			double[] meanBenign=new double[9];
+			double[] meanMalignant=new double[9];
+			double[] stdDevBenign=new double[9];
+			double[] stdDevMalignant=new double[9];
+			String line;
+			
+			try 
+			{
+			BufferedReader inputData = new BufferedReader(new FileReader("C:/Users/shivika/Desktop/data3.txt"));
+				
+			while ((line = inputData.readLine()) != null){
+			String[] values = line.split(",");
+			ArrayList<Integer> trainingData=new ArrayList<Integer>();
+					
+			// Taking values from a file into trainingData and Separating it into malignant and Benign 
+			
+			for(int i=0;i<values.length;i++){
+			if(values[i].equals("?"))
+			{
+					trainingData.add(1);
+				    continue;
+			}
+			trainingData.add(Integer.parseInt(values[i]));
+			}
+			if(trainingData.get(9)==2)
+			{
+				trainingData.remove(9);
+				benignCancer.add(trainingData);
+			}
+						
+			else if(trainingData.get(9)==4)
+			{
+				trainingData.remove(9);
+				malignantCancer.add(trainingData);
+			}
+			}
+				inputData.close();
+				
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}				
+
+			// Summing up each attribute
+			double[] sumBenign=new double[9];
+			for(int i=0;i<benignCancer.size();i++)
+			{
+				for(int j=0;j<9;j++){
+					sumBenign[j]=sumBenign[j]+benignCancer.get(i).get(j);
+					}
+			}
+			
+			double[] sumMalignant=new double[9];
+			for(int i=0;i<malignantCancer.size();i++)
+			{
+				for(int j=0;j<9;j++){
+					sumMalignant[j]=sumMalignant[j]+malignantCancer.get(i).get(j);
+					}
+			}
+			
+			//Calculating the mean for benign and malignant cancer
+			for(int i=0;i<sumBenign.length;i++){
+				meanBenign[i]=sumBenign[i]/benignCancer.size();
+			}
+		
+			for(int i=0;i<sumMalignant.length;i++){
+				meanMalignant[i]=sumMalignant[i]/malignantCancer.size();
+			}
+			
+			
+			//Calculating the variance and standard deviation for benign and malignant cancer
+			double[] varBenign=new double[9];
+			for(int i = 0; i < benignCancer.size(); i++){
+				for(int j = 0; j < 9; j++){
+					varBenign[j] = varBenign[j] + (Math.pow((meanBenign[j] - benignCancer.get(i).get(j)), 2)/benignCancer.size());
+				}		
+			}
+
+			for(int i=0;i<varBenign.length;i++){
+				stdDevBenign[i]=Math.pow(varBenign[i], 0.5);
+			}
+			
+			double[] varMalignant=new double[9];
+			for(int i = 0; i < malignantCancer.size(); i++){
+				for(int j = 0; j < 9; j++){
+					varMalignant[j] = varMalignant[j] + (Math.pow((meanMalignant[j] - malignantCancer.get(i).get(j)), 2)/malignantCancer.size());
+				}		
+			}
+
+			for(int i=0;i<varMalignant.length;i++){
+				stdDevMalignant[i]=Math.pow(varMalignant[i], 0.5);
+			}
+			
+			//For Test Data
+			Scanner inputTestData = new Scanner(new File("C:/Users/shivika/Desktop/data1.txt"));
+			
+			double countTestData = 0;
+			double countPredictBenign = 0;
+			double countPredictMalignant = 0;
+			
+			while(inputTestData.hasNextLine()){
+			countTestData++;	
+			String[] testData = inputTestData.nextLine().split(",");
+			double[] arrayTestData = new double[testData.length];
+			for(int i = 0; i < testData.length; i++){
+				if(testData[i].equals("?")){
+					arrayTestData[i] = 1;
+					continue;
+				}
+				arrayTestData[i]= Integer.parseInt(testData[i]);
+			}
+			
+			double[] attributeProbBenign=new double[9];
+			double[] exponentBenign = new double[9];
+			for(int j = 0; j < 9; j++){
+				exponentBenign[j] = Math.exp(-(Math.pow(arrayTestData[j] - meanBenign[j], 2))/(2*Math.pow((stdDevBenign[j]), 2)));
+				attributeProbBenign[j] = (1/(stdDevBenign[j] * Math.pow(2 * Math.PI, 0.5 )))*exponentBenign[j];
+			}
+			
+			double totalProbBenign = 1 * ((double)benignCancer.size()/(benignCancer.size() + malignantCancer.size()));;
+			for(int i = 0; i < attributeProbBenign.length; i++){
+				totalProbBenign = totalProbBenign  * attributeProbBenign[i];
+			}
+			
+			double[] attributeProbMalignant=new double[9];
+			double[] exponentMalignant = new double[9];
+			for(int j = 0; j < 9; j++){
+				exponentMalignant[j] = Math.exp(-(Math.pow(arrayTestData[j] - meanMalignant[j], 2))/(2*Math.pow((stdDevMalignant[j]), 2)));
+				attributeProbMalignant[j] = (1/(stdDevMalignant[j] * Math.pow(2 * Math.PI, 0.5 )))*exponentMalignant[j];
+			}
+			
+			double totalProbMalignant = 1 * ((double)malignantCancer.size()/(benignCancer.size() + malignantCancer.size()));;
+			for(int i = 0; i < attributeProbMalignant.length; i++){
+				totalProbMalignant = totalProbMalignant  * attributeProbMalignant[i];
+			}
+			
+			if(totalProbBenign > totalProbMalignant){
+				System.out.println("BENIGN "+2);
+				if(arrayTestData[9] == 2){
+					countPredictBenign++;
+				}
+			}
+			else{
+				System.out.println("MALIGNANT "+4);
+				if(arrayTestData[9] == 4){
+					countPredictMalignant++;
+				}
+			}
+			}
+			double Accuracy = (countPredictBenign + countPredictMalignant)*100/countTestData;
+			System.out.println("The accuracy is: "+Accuracy);	
+			inputTestData.close();
+			}	
+}		
