@@ -1,0 +1,380 @@
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+
+
+
+public class NaiveBayesFinal 
+{
+	
+	int countMalignant=0;
+	int countBenign=0;
+	static int totalValues=0;
+	
+	int[][] clumpThickness = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] uniformityOfCellSize = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] uniformityOfCellShape = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] marginalAdhesion = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] singleEpithelialCellSize = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] bareNuclei = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] bareChromation = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] normalNucleoli = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	int[][] mitosis = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+	
+
+	
+	public class diagnosisData{
+    	
+    	private int ID;
+    	private int clumpThickness;
+    	private int uniformityOfCellSize;
+    	private int uniformityOfCellShape;
+    	private int marginalAdhesion;
+    	private int singleEpithelialCellSize;
+    	private int bareNuclei;
+    	private int bareChromation;
+    	private int normalNucleoli;
+    	private int mitosis;
+    	private int stageOfCancer;
+    	private int classify;
+    	
+    	private double mean;
+    	private double stdDeviation;
+   	
+    	//public float probOfBenCancer;
+    	//public float probOfMalCancer;
+    	//public float probMitosis;
+    		
+    	
+    	public int getID() {
+    		return ID;
+    	}
+
+    	public void setID(int iD) {
+    		ID = iD;
+    	}
+
+    	public int getClumpThickness() {
+    		return clumpThickness;
+    	}
+
+    	public void setClumpThickness(int clumpThickness) {
+    		this.clumpThickness = clumpThickness;
+    	}
+
+    	public int getUniformityOfCellSize() {
+    		return uniformityOfCellSize;
+    	}
+
+    	public void setUniformityOfCellSize(int uniformityOfCellSize) {
+    		this.uniformityOfCellSize = uniformityOfCellSize;
+    	}
+
+    	public int getUniformityOfCellShape() {
+    		return uniformityOfCellShape;
+    	}
+
+    	public void setUniformityOfCellShape(int uniformityOfCellShape) {
+    		this.uniformityOfCellShape = uniformityOfCellShape;
+    	}
+
+    	public int getMarginalAdhesion() {
+    		return marginalAdhesion;
+    	}
+
+    	public void setMarginalAdhesion(int marginalAdhesion) {
+    		this.marginalAdhesion = marginalAdhesion;
+    	}
+
+    	public int getSingleEpithelialCellSize() {
+    		return singleEpithelialCellSize;
+    	}
+
+    	public void setSingleEpithelialCellSize(int singleEpithelialCellSize) {
+    		this.singleEpithelialCellSize = singleEpithelialCellSize;
+    	}
+
+    	public int getBareNuclei() {
+    		return bareNuclei;
+    	}
+
+    	public void setBareNuclei(int bareNuclei) {
+    		this.bareNuclei = bareNuclei;
+    	}
+
+    	public int getBareChromation() {
+    		return bareChromation;
+    	}
+
+    	public void setBareChromation(int bareChromation) {
+    		this.bareChromation = bareChromation;
+    	}
+
+    	public int getNormalNucleoli() {
+    		return normalNucleoli;
+    	}
+
+    	public void setNormalNucleoli(int normalNucleoli) {
+    		this.normalNucleoli = normalNucleoli;
+    	}
+
+    	public int getMitosis() {
+    		return mitosis;
+    	}
+
+    	public void setMitosis(int mitosis) {
+    		this.mitosis = mitosis;
+    	}
+
+    	public int getStageOfCancer() {
+    		return stageOfCancer;
+    	}
+
+    	public void setStageOfCancer(int stageOfCancer) {
+    		this.stageOfCancer = stageOfCancer;
+    	}
+
+		public int getClassify() {
+			return classify;
+		}
+
+		public void setClassify(int classify) {
+			this.classify = classify;
+		}
+
+		public double getMean() {
+			return mean;
+		}
+
+		public void setMean(double mean) {
+			this.mean = mean;
+		}
+
+		public double getStdDeviation() {
+			return stdDeviation;
+		}
+
+		public void setStdDeviation(double stdDeviation) {
+			this.stdDeviation = stdDeviation;
+		}
+    	
+    	
+}
+   
+
+    public static void main(String args[]) throws IOException
+	{
+    	//String line;
+    	NaiveBayesFinal nb= new NaiveBayesFinal ();
+		
+    	List<String> lines = Files.readAllLines(Paths.get("/Users/Sarika/Desktop/data.txt")); 	
+	
+		ArrayList<diagnosisData> trainingData = new ArrayList<diagnosisData>();
+		int count=0;
+		for(int i=0;i<lines.size();i++)
+		{
+			//Fetching the diagnosis Data by making disgnosis class' object and then putting it into trainingData
+			
+			diagnosisData objTemp=nb.new diagnosisData();
+			
+			String[] dimension=lines.get(i).split(",");
+			
+			objTemp.setID(Integer.parseInt(dimension[0]));
+			objTemp.setClumpThickness(Integer.parseInt(dimension[1]));
+			objTemp.setUniformityOfCellSize(Integer.parseInt(dimension[2]));
+			objTemp.setUniformityOfCellShape(Integer.parseInt(dimension[3]));
+			objTemp.setMarginalAdhesion(Integer.parseInt(dimension[4]));
+			objTemp.setSingleEpithelialCellSize(Integer.parseInt(dimension[5]));
+			objTemp.setBareNuclei(Integer.parseInt(dimension[6]));
+			objTemp.setBareChromation(Integer.parseInt(dimension[7]));
+			objTemp.setNormalNucleoli(Integer.parseInt(dimension[8]));
+			objTemp.setMitosis(Integer.parseInt(dimension[9]));
+			objTemp.setClassify(Integer.parseInt(dimension[10]));
+			trainingData.add(objTemp);
+			
+			//System.out.println(objTemp);
+		}
+		
+		totalValues = lines.size();                        //calculates the total value of the data
+		
+		//System.out.println(lines); 
+
+		System.out.println("Provide the input data in comman seperated format ");
+		Scanner sc= new Scanner(System.in);		
+		String test=sc.nextLine();
+		System.out.println(test); 
+				
+		String[] testpoint=test.split(",");
+		
+		
+		/** This object will take the test Data that has been passed in order to calculate probability 
+           	And then calculate probability in a mehthod whose argument will be the object testData
+		**/
+		
+		diagnosisData testData=nb.new diagnosisData();
+		
+		testData.setID(Integer.parseInt(testpoint[0]));
+		testData.setClumpThickness(Integer.parseInt(testpoint[1]));
+		testData.setUniformityOfCellSize(Integer.parseInt(testpoint[2]));
+		testData.setUniformityOfCellShape(Integer.parseInt(testpoint[3]));
+		testData.setMarginalAdhesion(Integer.parseInt(testpoint[4]));
+		testData.setSingleEpithelialCellSize(Integer.parseInt(testpoint[5]));
+		testData.setBareNuclei(Integer.parseInt(testpoint[6]));
+		testData.setBareChromation(Integer.parseInt(testpoint[7]));
+		testData.setNormalNucleoli(Integer.parseInt(testpoint[8]));
+		testData.setMitosis(Integer.parseInt(testpoint[9]));
+				
+		//calculating probabilities
+		
+		nb.calculateData(trainingData);
+		
+		float benignProb = nb.calculateProbabilityAttributesBenign(testData);
+		float malProb = nb.calculateProbabilityAttributesMalignant(testData);
+		
+		
+		//for Testing Purpose:
+		
+		System.out.println(benignProb);
+		System.out.println(malProb);
+		
+		
+		
+		
+		if (benignProb>malProb)
+		{
+			System.out.println("Cancer Is Benign");
+		}
+		else
+		{
+			System.out.println("Cancer Is Malignant");
+		}
+		
+	}
+    
+    public void  calculateData(ArrayList<diagnosisData> trainingData)
+    {    		
+    	    	
+    	for (diagnosisData d:trainingData)
+    	{
+    		//Classify the cancer to be Benign or Malignant
+    		//Design a two Dimensional array so that you save the memorySpace. Also, calculate each attribute and save it in the array
+    		// when the array value is (0==benign) && (1==malignant)
+    		
+    		
+    		if (d.getClassify()==2)
+    		{
+    			countBenign++; 
+    			clumpThickness[d.getClumpThickness() - 1][0]++;
+        		uniformityOfCellSize[d.getUniformityOfCellSize() - 1][0]++;
+            	uniformityOfCellShape[d.getUniformityOfCellShape() - 1][0]++;
+            	marginalAdhesion[d.getMarginalAdhesion() - 1][0]++;
+            	singleEpithelialCellSize[d.getSingleEpithelialCellSize() - 1][0]++;
+            	bareNuclei[d.getBareNuclei() - 1][0]++;
+            	bareChromation[d.getBareChromation() - 1][0]++;
+            	normalNucleoli[d.getNormalNucleoli() - 1][0]++;
+            	mitosis[d.getMitosis() - 1][0]++;
+    		}
+    		else if (d.getClassify()==4)
+        	{
+        		countMalignant++;
+        		clumpThickness[d.getClumpThickness() - 1][1]++;
+        		uniformityOfCellSize[d.getUniformityOfCellSize() - 1][1]++;
+            	uniformityOfCellShape[d.getUniformityOfCellShape() - 1][1]++;
+            	marginalAdhesion[d.getMarginalAdhesion() - 1][1]++;
+            	singleEpithelialCellSize[d.getSingleEpithelialCellSize() - 1][1]++;
+            	bareNuclei[d.getBareNuclei() - 1][1]++;
+            	bareChromation[d.getBareChromation() - 1][1]++;
+            	normalNucleoli[d.getNormalNucleoli() - 1][1]++;
+            	mitosis[d.getMitosis() - 1][1]++;
+        	}
+    		    		
+    		
+        	//Calculate the total Data in the dataset
+                                                 		
+    	}
+    	
+    	//System.out.println("Benign is   "+countBenign);
+    	//System.out.println("Mall is   "+countMalignant);	
+    }
+    
+    //Method to calculate probability If the Category is Benign
+    
+    public float calculateProbabilityAttributesBenign(diagnosisData testData)
+    {
+    	float probabilityBenign = (float)countBenign/totalValues;
+    	
+    	    	
+    	float probOfClumpThicknessB = (float)clumpThickness[testData.getClumpThickness()-1][0]/countBenign;
+    	float probOfUniformityOfCellSizeB = (float)uniformityOfCellSize[testData.getUniformityOfCellSize() - 1][0]/countBenign;
+    	float probOfUniformityOfCellShapeB = (float)uniformityOfCellShape[testData.getUniformityOfCellShape() - 1][0]/countBenign;
+    	float probOfMarginalAdhesionB = (float)marginalAdhesion[testData.getMarginalAdhesion() - 1][0]/countBenign;
+    	float probOfSingleEpithelialCellSizeB = (float)singleEpithelialCellSize[testData.getSingleEpithelialCellSize() - 1][0]/countBenign;
+    	float probOfBareNucleiB = (float)bareNuclei[testData.getBareNuclei() - 1][0]/countBenign;
+    	float probOfBareChromationB = (float)bareChromation[testData.getBareChromation() - 1][0]/countBenign;
+    	float probOfNormalNucleiB = (float)normalNucleoli[testData.getNormalNucleoli() - 1][0]/countBenign;
+    	float probOfMitosisB = (float)mitosis[testData.getMitosis() - 1][0]/countBenign;
+ 
+    	float conditionalBenign= probOfClumpThicknessB*probOfUniformityOfCellSizeB*probOfUniformityOfCellShapeB
+    			                *probOfMarginalAdhesionB*probOfSingleEpithelialCellSizeB*probOfBareNucleiB
+    			                *probOfBareChromationB*probOfNormalNucleiB*probOfMitosisB;
+    	
+    	
+    	float conditionalProbCancerIsBenign = probabilityBenign * conditionalBenign;
+    	
+    	return conditionalProbCancerIsBenign;
+    	
+    }
+    
+    //Method to calculate probability If the Category is Malignant
+    
+    public float calculateProbabilityAttributesMalignant(diagnosisData testData)
+    {
+    	float probabilityMalignant = (float)countMalignant/totalValues;
+    	
+    	//We won't be using a loop here for now. ??!!!
+    	    	
+    	float probOfClumpThicknessM = (float)clumpThickness[testData.getClumpThickness()-1][1]/countMalignant;
+    	float probOfUniformityOfCellSizeM = (float)uniformityOfCellSize[testData.getUniformityOfCellSize() - 1][1]/countMalignant;
+    	float probOfUniformityOfCellShapeM = (float)uniformityOfCellShape[testData.getUniformityOfCellShape() - 1][1]/countMalignant;
+    	float probOfMarginalAdhesionM = (float)marginalAdhesion[testData.getMarginalAdhesion() - 1][1]/countMalignant;
+    	float probOfSingleEpithelialCellSizeM = (float)singleEpithelialCellSize[testData.getSingleEpithelialCellSize() - 1][1]/countMalignant;
+    	float probOfBareNucleiM = (float)bareNuclei[testData.getBareNuclei() - 1][1]/countMalignant;
+    	float probOfBareChromationM = (float)bareChromation[testData.getBareChromation() - 1][1]/countMalignant;
+    	float probOfNormalNucleiM = (float)normalNucleoli[testData.getNormalNucleoli() - 1][1]/countMalignant;
+    	float probOfMitosisM = (float)mitosis[testData.getMitosis() - 1][1]/countMalignant;
+    	
+    	
+    	float conditionalMalignant= probOfClumpThicknessM*probOfUniformityOfCellSizeM*probOfUniformityOfCellShapeM
+    			                   *probOfMarginalAdhesionM*probOfSingleEpithelialCellSizeM*probOfBareNucleiM
+    			                   *probOfBareChromationM*probOfNormalNucleiM*probOfMitosisM;
+    	
+    	float conditionalProbCancerIsMalignant = probabilityMalignant * conditionalMalignant;
+    	
+    	return conditionalProbCancerIsMalignant;	
+    }
+    
+    // Not sure whether this should be calculated or not
+    
+    public void calculateEvidence(diagnosisData testData)
+    {    	
+    	float probOfClumpThickness = (float)clumpThickness[testData.getClumpThickness()-1][1]/totalValues;
+    	float probOfUniformityOfCellSize = (float)uniformityOfCellSize[testData.getUniformityOfCellSize() - 1][1]/totalValues;
+    	float probOfUniformityOfCellShape = (float)uniformityOfCellShape[testData.getUniformityOfCellShape() - 1][1]/totalValues;
+    	float probOfMarginalAdhesion = (float)marginalAdhesion[testData.getMarginalAdhesion() - 1][1]/totalValues;
+    	float probOfSingleEpithelialCellSize = (float)singleEpithelialCellSize[testData.getSingleEpithelialCellSize() - 1][1]/totalValues;
+    	float probOfBareNuclei = (float)bareNuclei[testData.getBareNuclei() - 1][1]/totalValues;
+    	float probOfBareChromation = (float)bareChromation[testData.getBareChromation() - 1][1]/totalValues;
+    	float probOfNormalNuclei = (float)normalNucleoli[testData.getNormalNucleoli() - 1][1]/totalValues;
+    	float probOfMitosis = (float)mitosis[testData.getMitosis() - 1][1]/totalValues;
+    	
+    	
+    	float probabilityOfAttributes= probOfClumpThickness*probOfUniformityOfCellSize*probOfUniformityOfCellShape
+    			                       *probOfMarginalAdhesion*probOfSingleEpithelialCellSize*probOfBareNuclei
+    			                       *probOfBareChromation*probOfNormalNuclei*probOfMitosis;
+    }   
+}
